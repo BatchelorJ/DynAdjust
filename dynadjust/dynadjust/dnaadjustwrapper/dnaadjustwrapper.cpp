@@ -55,15 +55,21 @@ void PrintSummaryMessage(dna_adjust* netAdjust, const project_settings* p, milli
 	}
 
 	cout << left << "+ Done." << endl;
+
+	UINT32 block_count(netAdjust->blockCount());
+	string block_str(" block");
+	if (block_count > 1)
+		block_str.append("s");
+	block_str.append(".");
 	
 	switch (p->a.adjust_mode)
 	{
 	case Phased_Block_1Mode:
 	case PhasedMode:
 		if (netAdjust->GetStatus() == ADJUST_SUCCESS)
-			cout << "+ Successfully adjusted " << netAdjust->blockCount() << " blocks.";
+			cout << "+ Successfully adjusted " << block_count << block_str;
 		else
-			cout << "+ Attempted to adjust " << netAdjust->blockCount() << " blocks.";
+			cout << "+ Attempted to adjust " << netAdjust->blockCount() << block_str;
 		cout << endl;
 	}
 	
@@ -519,6 +525,8 @@ int ParseCommandLineOptions(const int& argc, char* argv[], const variables_map& 
 		p.o._adj_msr_tstat = 1;
 	if (vm.count(OUTPUT_ADJ_MSR_DBID))
 		p.o._database_ids = 1;
+	if (vm.count(OUTPUT_IGNORED_MSRS))
+		p.o._print_ignored_msrs = 1;
 	if (vm.count(PURGE_STAGE_FILES))
 		p.a.purge_stage_files = 1;
 	if (vm.count(RECREATE_STAGE_FILES))
@@ -778,6 +786,8 @@ int main(int argc, char* argv[])
 				"Output t-statistics for adjusted measurements.")
 			(OUTPUT_ADJ_MSR_DBID,
 				"Output measurement and cluster ids for database mapping.")
+			(OUTPUT_IGNORED_MSRS,
+				"Output adjusted measurement statistics for ignored measurements.")
 			(OUTPUT_ADJ_MSR_SORTBY, value<UINT16>(&p.o._sort_adj_msr),
 				string("Sort order for adjusted measurements.\n  " + 
 					StringFromT(orig_adj_msr_sort_ui) + ": Original input file order (default)\n  " + 
@@ -1057,8 +1067,8 @@ int main(int argc, char* argv[])
 					last_write_time(p.a.seg_file) < last_write_time(p.a.bms_file))
 				{
 					// Has import been run after the segmentation file was created?
-					if (bst_meta_import && (last_write_time(p.a.seg_file) < last_write_time(p.a.bst_file)) || 
-						bms_meta_import && (last_write_time(p.a.seg_file) < last_write_time(p.a.bms_file)))
+					if ((bst_meta_import && (last_write_time(p.a.seg_file) < last_write_time(p.a.bst_file))) || 
+						(bms_meta_import && (last_write_time(p.a.seg_file) < last_write_time(p.a.bms_file))))
 					{
 						cout << endl << endl << 
 							"- Error: The raw stations and measurements have been imported after" << endl <<
@@ -1103,8 +1113,8 @@ int main(int argc, char* argv[])
 					//     then adjust will attempt to load memory map files using the same parameters from the first import
 					//     and segment.
 					//  Hence, force the user to run adjust with the --create-stage-files option.
-					if (bst_meta_import && (last_write_time(est_mmapfile_name) < last_write_time(p.a.bst_file)) ||
-						bms_meta_import && (last_write_time(est_mmapfile_name) < last_write_time(p.a.bms_file)))
+					if ((bst_meta_import && (last_write_time(est_mmapfile_name) < last_write_time(p.a.bst_file))) ||
+						(bms_meta_import && (last_write_time(est_mmapfile_name) < last_write_time(p.a.bms_file))))
 					{
 						cout << endl << endl << 
 							"- Error: The raw stations and measurements have been imported after" << endl <<
@@ -1175,6 +1185,8 @@ int main(int argc, char* argv[])
 		case ADJUST_EXCEPTION_RAISED:
 			running = false;
 			return EXIT_FAILURE;
+		default:
+			break;
 		}
 
 		if (p.a.report_mode)

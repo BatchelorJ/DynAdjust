@@ -1,8 +1,6 @@
 # <dnaimport/...> build rules
 project (dnaimport)
 
-set (CMAKE_BUILD_TYPE "Release")
-
 add_definitions(-DBUILD_DNAIMPORT_DLL -DBUILD_EXPORTDNATYPES -DMKL_ILP64 -openmp)
 
 include_directories (${PROJECT_SOURCE_DIR})

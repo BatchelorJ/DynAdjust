@@ -527,7 +527,7 @@ T GreatCircleDistance(const T& dLatitudeAT, const T& dLongitudeAT, const T& dLat
 }
 
 // Rigorous Geodesic via Robbins' formula
-// Robbins, A. R. (1962). “Long lines on the spheroid.” Surv. Rev., XVI(125), 301–309.
+// Robbins, A. R. (1962). ï¿½Long lines on the spheroid.ï¿½ Surv. Rev., XVI(125), 301ï¿½309.
 template <class T>
 T RobbinsReverse(const T& dLatitudeAT, const T& dLongitudeAT, const T& dLatitudeTO, const T& dLongitudeTO, T* pAzimuth, const CDnaEllipsoid* ellipsoid)
 {
@@ -579,60 +579,58 @@ T RobbinsReverse(const T& dLatitudeAT, const T& dLongitudeAT, const T& dLatitude
 
 
 template <class T>
-void VincentyInverse(const T& dLatitudeAT, const T& dLongitudeAT, const T& dAzimuth, const T& dDistance, 
+void VincentyDirect(const T& dLatitudeAT, const T& dLongitudeAT, const T& dAzimuth, const T& dDistance, 
 					T *dLatitudeTO, T *dLongitudeTO, const CDnaEllipsoid* ellipsoid)
 {
 	// calculate fundamentals
 	T f = ellipsoid->GetFlattening();
 	T b = ellipsoid->GetSemiMinor();
-	T TanU1 = (1.0 - f) * tan(dLatitudeAT);		// from lat pos in radians
-	T TanSigma1 = TanU1 / cos(dAzimuth);
-	T SinAlpha = cos(atan(TanU1)) * sin(dAzimuth);
-	T u2 = pow(cos(asin(SinAlpha)), 2.0) * (pow(ellipsoid->GetSemiMajor(), 2.0) - pow(b, 2.0)) / pow(b, 2.0);
+
+	// parametric latitude of P'
+	T tanUI = (1.0 - f) * tan(dLatitudeAT);		
+	// angular distance
+	T tanSigma1 = tanUI / cos(dAzimuth);		
+	// parametric latitude of the geodesic vertex, or
+	// azimuth of the geodesic at the equator
+	T sinAlpha = cos(atan(tanUI)) * sin(dAzimuth);
+	T Alpha = asin(sinAlpha);
+	T cosAlpha = cos(Alpha);
+	// geodesic constant
+	T u2 = pow(cosAlpha, 2.0) * (pow(ellipsoid->GetSemiMajor(), 2.0) - pow(b, 2.0)) / pow(b, 2.0);
+	
+	// Vincenty's constants A' and B'
 	T A = 1.0 + (u2/16384.0) * (4096.0 + (u2 * (-768.0 + (u2 * (320.0 - (175.0 * u2))))));
 	T B = (u2/1024.0) * (256.0 + (u2 * (-128.0 + (u2 * (74.0 - (47.0 * u2))))));
+	
 	T Sigma = dDistance / (b * A);
-	T TwoSigmam, deltaSigma, SigmaDiff(99.);
-	T p, q, r, s, t, u, v, w, x;
-	//Sigma = 0.0078558425;
+	T twoSigmam, deltaSigma, SigmaDiff(99.);
 	
 	// iterate until no signigicant change in sigma
 	for (UINT16 i(0); i<10; i++)
 	{
 		if (fabs(SigmaDiff) < PRECISION_1E16)
 			break;
-		p = 2.0 * atan(TanSigma1);					// 2 sigma 1
-		q = B * sin(Sigma);							// B sin sigma
-		r = (2.0 * atan(TanSigma1)) + Sigma;			// 2 sigma m
-		s = cos(r);									// cos 2 sigma m
-		t = cos(Sigma) * (-1.0 + (2.0 * s * s));		// cos sigma etc
-		u = -3.0 + (4.0 * sin(Sigma) * sin(Sigma));	// bracket 1
-		v = -3.0 + (4.0 * s * s);						// bracket 2
-		w = q * (s + B/4. * (t - B/6. * s * u * v));	// delta sigma
-		x = dDistance / (b * A) + w;					// sigma
 
-		TwoSigmam = (2.0 * atan(TanSigma1)) + Sigma;
-		deltaSigma = B * sin(Sigma) * (cos(TwoSigmam) + (B / 4.0 * ((cos(Sigma) * (-1.0 + (2.0 * pow(cos(TwoSigmam), 2.0)))) - (B / 6.0 * cos(TwoSigmam) * (-3.0 + (4.0 * pow(sin(Sigma), 2.0))) * ((-3.0 + (4.0 * pow(cos(TwoSigmam), 2.0))))))));
+		twoSigmam = (2.0 * atan(tanSigma1)) + Sigma;
+		deltaSigma = B * sin(Sigma) * (cos(twoSigmam) + (B / 4.0 * ((cos(Sigma) * (-1.0 + (2.0 * pow(cos(twoSigmam), 2.0)))) - (B / 6.0 * cos(twoSigmam) * (-3.0 + (4.0 * pow(sin(Sigma), 2.0))) * ((-3.0 + (4.0 * pow(cos(twoSigmam), 2.0))))))));
 		SigmaDiff = Sigma;
 		Sigma = (dDistance / (b * A)) + deltaSigma;
 		SigmaDiff -= Sigma;
 	}
 	
 	// latitude of new position
-	T topterm = sin(atan(TanU1)) * cos(Sigma) + cos(atan(TanU1)) * sin(Sigma) * cos(dAzimuth);
-	T botterm = ((1.0 - f) * pow((pow(SinAlpha, 2.0) + pow(((sin(atan(TanU1)) * sin(Sigma)) - (cos(atan(TanU1)) * cos(Sigma) * cos(dAzimuth))), 2.0)), 0.5));
-	*dLatitudeTO = atan2(((sin(atan(TanU1)) * cos(Sigma)) + (cos(atan(TanU1)) * sin(Sigma) * cos(dAzimuth))), ((1.0 - f) * pow((pow(SinAlpha, 2.0) + pow(((sin(atan(TanU1)) * sin(Sigma)) - (cos(atan(TanU1)) * cos(Sigma) * cos(dAzimuth))), 2.0)), 0.5)));
+	*dLatitudeTO = atan2(((sin(atan(tanUI)) * cos(Sigma)) + (cos(atan(tanUI)) * sin(Sigma) * cos(dAzimuth))), ((1.0 - f) * pow((pow(sinAlpha, 2.0) + pow(((sin(atan(tanUI)) * sin(Sigma)) - (cos(atan(tanUI)) * cos(Sigma) * cos(dAzimuth))), 2.0)), 0.5)));
 	
-	T Lambda = atan2((sin(Sigma) * sin(dAzimuth)), ((cos(atan(TanU1)) * cos(Sigma)) - (sin(atan(TanU1))*sin(Sigma)*cos(dAzimuth))));
-	T C = (f / 16.0) * pow(cos(asin(SinAlpha)), 2.0) * (4.0 + (f * (4.0 - (3.0 * pow(cos(asin(SinAlpha)), 2.0)))));
-	T Omega = Lambda - ((1.0 - C) * f * SinAlpha * (Sigma + (C * sin(Sigma) * (cos(TwoSigmam) + (C * cos(Sigma) * (-1 + (2 * pow(cos(TwoSigmam), 2.0))))))));
+	T Lambda = atan2((sin(Sigma) * sin(dAzimuth)), ((cos(atan(tanUI)) * cos(Sigma)) - (sin(atan(tanUI))*sin(Sigma)*cos(dAzimuth))));
+	T C = (f / 16.0) * pow(cosAlpha, 2.0) * (4.0 + (f * (4.0 - (3.0 * pow(cosAlpha, 2.0)))));
+	T Omega = Lambda - ((1.0 - C) * f * sinAlpha * (Sigma + (C * sin(Sigma) * (cos(twoSigmam) + (C * cos(Sigma) * (-1 + (2 * pow(cos(twoSigmam), 2.0))))))));
 	
 	// longitude of new position
 	*dLongitudeTO = dLongitudeAT + Omega;
 }
 
 template <class T>
-void ComputeLocalElements(const T X1, const T Y1, const T Z1,
+void ComputeLocalElements3D(const T X1, const T Y1, const T Z1,
 			const T X2, const T Y2, const T Z2, 
 			const T currentLatitude, const T currentLongitude,
 			T* local_12e, T* local_12n, T* local_12up)
@@ -659,6 +657,30 @@ void ComputeLocalElements(const T X1, const T Y1, const T Z1,
 }
 
 template <class T>
+void ComputeLocalElements2D(const T X1, const T Y1, const T Z1,
+	const T X2, const T Y2, const T Z2,
+	const T currentLatitude, const T currentLongitude,
+	T* local_12e, T* local_12n)
+{
+	// 1->2
+	T dX12(X2 - X1);
+	T dY12(Y2 - Y1);
+	T dZ12(Z2 - Z1);
+
+	// helpers
+	T sin_lat(sin(currentLatitude));
+	T cos_lat(cos(currentLatitude));
+	T sin_long(sin(currentLongitude));
+	T cos_long(cos(currentLongitude));
+
+
+	*local_12e = -sin_long * dX12 + cos_long * dY12;
+	*local_12n = -sin_lat * cos_long * dX12 -
+		sin_lat * sin_long * dY12 +
+		cos_lat * dZ12;
+}
+
+template <class T>
 T Direction(const T local_12e, const T local_12n)
 {
 	// "computed" direction 1->2
@@ -681,17 +703,8 @@ T Direction(const T X1, const T Y1, const T Z1,
 			const T currentLatitude, const T currentLongitude,
 			T* local_12e, T* local_12n)
 {
-	// compute vectors [1->2] & [1->3] in the local reference frame
-	//
-	// 1->2
-	T dX12(X2 - X1);
-	T dY12(Y2 - Y1);
-	T dZ12(Z2 - Z1);
-
-	*local_12e = -sin(currentLongitude) * dX12 + cos(currentLongitude) * dY12;
-	*local_12n = -sin(currentLatitude) * cos(currentLongitude) * dX12 - 
-		sin(currentLatitude) * sin(currentLongitude) * dY12 +
-		cos(currentLatitude) * dZ12;
+	ComputeLocalElements2D(X1, Y1, Z1, X2, Y2, Z2, currentLatitude, currentLongitude,
+		local_12e, local_12n);
 
 	return Direction(*local_12e, *local_12n);
 }
@@ -1199,4 +1212,12 @@ T HzAngleDeflectionCorrection(const T azimuth12, const T zenith12,
 		DirectionDeflectionCorrection(azimuth12, zenith12, deflPrimeV, deflPrimeM);
 }
 
+template <class T>
+T HzAngleDeflectionCorrections(const T azimuth12, const T zenith12,
+	const T azimuth13, const T zenith13,
+	const T deflPrimeV, const T deflPrimeM, T& correction12, T& correction13)
+{
+	return (correction13 = DirectionDeflectionCorrection(azimuth13, zenith13, deflPrimeV, deflPrimeM)) -
+		(correction12 = DirectionDeflectionCorrection(azimuth12, zenith12, deflPrimeV, deflPrimeM));
+}
 #endif /* DNATEMPLATEGEODESYFUNCS_H_ */

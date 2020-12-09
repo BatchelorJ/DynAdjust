@@ -526,10 +526,10 @@ private:
 
 // M = measurement_t, U = UINT32
 template<typename M, typename U>
-class CompareFileOrder
+class CompareMsrFileOrder
 {
 public:
-	CompareFileOrder(vector<M>* m)
+	CompareMsrFileOrder(vector<M>* m)
 		:  _m(m) {}
 	bool operator()(const U& lhs, const U& rhs) {
 		return _m->at(lhs).fileOrder < _m->at(rhs).fileOrder;
@@ -811,7 +811,9 @@ public:
 			case 'G':
 			case 'X':
 			case 'Y':
-				lhsValue = magnitude(_m->at(lhs.first).NStat, _m->at(lhs.first+1).NStat, _m->at(lhs.first+2).NStat);
+				//lhsValue = magnitude(_m->at(lhs.first).NStat, _m->at(lhs.first+1).NStat, _m->at(lhs.first+2).NStat);
+				lhsValue = max(fabs(_m->at(lhs.first).NStat), fabs(_m->at(lhs.first + 1).NStat));
+				lhsValue = max(lhsValue, fabs(_m->at(lhs.first + 2).NStat));
 				break;
 			case 'D':
 				//TRACE("%.9f\n", radians_to_degrees_(_m->at(lhs.first).term1));
@@ -835,7 +837,9 @@ public:
 			case 'G':
 			case 'X':
 			case 'Y':
-				rhsValue = magnitude(_m->at(rhs.first).NStat, _m->at(rhs.first+1).NStat, _m->at(rhs.first+2).NStat);
+				//rhsValue = magnitude(_m->at(rhs.first).NStat, _m->at(rhs.first+1).NStat, _m->at(rhs.first+2).NStat);
+				rhsValue = max(fabs(_m->at(rhs.first).NStat), fabs(_m->at(rhs.first + 1).NStat));
+				rhsValue = max(rhsValue, fabs(_m->at(rhs.first + 2).NStat));
 				break;
 			case 'D':
 				//TRACE("%.9f\n", radians_to_degrees_(_m->at(rhs.first).term1));
@@ -859,7 +863,9 @@ public:
 			case 'G':
 			case 'X':
 			case 'Y':
-				lhsValue = magnitude(_m->at(lhs.first).NStat, _m->at(lhs.first+1).NStat, _m->at(lhs.first+2).NStat);
+				//lhsValue = magnitude(_m->at(lhs.first).NStat, _m->at(lhs.first+1).NStat, _m->at(lhs.first+2).NStat);
+				lhsValue = max(fabs(_m->at(lhs.first).NStat), fabs(_m->at(lhs.first + 1).NStat));
+				lhsValue = max(lhsValue, fabs(_m->at(lhs.first + 2).NStat));
 				break;
 			case 'D':
 				//TRACE("%.9f\n", radians_to_degrees_(_m->at(lhs.first).term1));
@@ -879,7 +885,9 @@ public:
 			case 'G':
 			case 'X':
 			case 'Y':
-				rhsValue = magnitude(_m->at(rhs.first).NStat, _m->at(rhs.first+1).NStat, _m->at(rhs.first+2).NStat);
+				//rhsValue = magnitude(_m->at(rhs.first).NStat, _m->at(rhs.first+1).NStat, _m->at(rhs.first+2).NStat);
+				rhsValue = max(fabs(_m->at(rhs.first).NStat), fabs(_m->at(rhs.first + 1).NStat));
+				rhsValue = max(rhsValue, fabs(_m->at(rhs.first + 2).NStat));
 				break;
 			case 'D':
 				//TRACE("%.9f\n", radians_to_degrees_(_m->at(rhs.first).term1));

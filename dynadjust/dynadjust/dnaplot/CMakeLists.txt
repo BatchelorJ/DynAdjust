@@ -1,8 +1,6 @@
 # <dnaplot/...> build rules
 project (dnaplot)
 
-set (CMAKE_BUILD_TYPE "Release")
-
 add_definitions(-DBUILD_DNAPLOT_DLL -DBUILD_EXPORTDNATYPES -DMKL_ILP64 -openmp)
 
 include_directories (${PROJECT_SOURCE_DIR})

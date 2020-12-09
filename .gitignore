@@ -9,6 +9,7 @@ cmake_install.cmake
 
 # ignore compiled dynadjust wrappers & binaries
 dynadjust/build/
+dynadjust/build_gcc/
 dynadjust/bin/
 
 *.suo
@@ -21,3 +22,7 @@ dynadjust/bin/
 *.db-wal
 *.user
 /.idea/
+.vscode/launch.json
+
+# readme and other files not requiring external contribution
+README.md

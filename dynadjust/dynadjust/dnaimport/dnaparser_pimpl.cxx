@@ -73,6 +73,13 @@ void Clusterpoint_pimpl::Z (const ::std::string& Z)
 	g_parsemsr_tally.Y++;
 }
 
+void Clusterpoint_pimpl::MeasurementDBID(const ::std::string& MeasurementID)
+{
+	_dnaGpsPoint->SetMeasurementDBID(MeasurementID);
+	_dnaGpsPoint->SetClusterDBID(_parent_dnaGpsPointCluster->GetClusterDBID());
+}
+
+
 void Clusterpoint_pimpl::SigmaXX (const ::std::string& SigmaXX)
 {
 	_dnaGpsPoint->SetSigmaXX(SigmaXX);
@@ -149,6 +156,14 @@ void Directions_pimpl::StdDev(const ::std::string& StdDev)
 	_dnaDirection->SetStdDev(StdDev);
 
 }
+	
+
+void Directions_pimpl::MeasurementDBID(const ::std::string& MeasurementID)
+{
+	_dnaDirection->SetMeasurementDBID(MeasurementID);
+	_dnaDirection->SetClusterDBID(_parent_dnaDirectionSet->GetClusterDBID());
+}
+	
 
 void Directions_pimpl::post_Directions()
 {
@@ -628,7 +643,31 @@ void DnaMeasurement_pimpl::Source(const ::std::string& Source)
 	else
 		_dnaCurrentMsr->SetSource(Source);
 }
+	
 
+void DnaMeasurement_pimpl::MeasurementDBID(const ::std::string& MeasurementID)
+{
+	if (!_dnaCurrentMsr)
+		throw XMLInteropException("\"Type\" element must be the first element within \"DnaMeasurement\".", 0);
+
+	if (MeasurementID.empty())
+		_dnaCurrentMsr->SetMeasurementDBID("");
+	else
+		_dnaCurrentMsr->SetMeasurementDBID(MeasurementID);
+}
+	
+
+void DnaMeasurement_pimpl::ClusterDBID(const ::std::string& ClusterID)
+{
+	if (!_dnaCurrentMsr)
+		throw XMLInteropException("\"Type\" element must be the first element within \"DnaMeasurement\".", 0);
+
+	if (ClusterID.empty())
+		_dnaCurrentMsr->SetClusterDBID("");
+	else
+		_dnaCurrentMsr->SetClusterDBID(ClusterID);
+}
+	
 
 void DnaMeasurement_pimpl::post_DnaMeasurement()
 {
@@ -824,6 +863,8 @@ void GPSBaseline_pimpl::pre()
 	
 	_dnaGpsBaseline->SetClusterID(_parent_dnaGpsBaselineCluster->GetClusterID());
 
+	_dnaGpsBaseline->SetClusterDBID(_parent_dnaGpsBaselineCluster->GetClusterDBID());
+
 	if (_parent_dnaGpsBaselineCluster->GetType().empty())
 		throw XMLInteropException("\"Type\" element must be provided before \"GPSBaseline\" element.", 0);
 
@@ -898,6 +939,12 @@ void GPSBaseline_pimpl::Z(const ::std::string& Z)
 		g_parsemsr_tally.X++;
 		break;
 	}
+}
+
+void GPSBaseline_pimpl::MeasurementDBID(const ::std::string& MeasurementID)
+{
+	_dnaGpsBaseline->SetMeasurementDBID(MeasurementID);
+	_dnaGpsBaseline->SetClusterDBID(_parent_dnaGpsBaselineCluster->GetClusterDBID());
 }
 
 void GPSBaseline_pimpl::SigmaXX(const ::std::string& SigmaXX)
@@ -1174,8 +1221,8 @@ void referenceframe_pimpl::pre()
 // attribute named referenceframe, the default will be set to whatever is in
 // the XSD file.
 // For DynaML.xsd, the following is specified:
-//     <xs:attribute name="referenceframe" type="xs:string" use="optional" default="GDA94"/>
-// In this case, post_string() will return "GDA94"
+//     <xs:attribute name="referenceframe" type="xs:string" use="optional" default="GDA2020"/>
+// In this case, post_string() will return "GDA2020"
 void referenceframe_pimpl::post_type(string& referenceframe, bool userspecifiedreferenceframe, bool overridereferenceframe)
 {
 	// 1. Get the DnaXmlFormat referenceframe attribute value from the file

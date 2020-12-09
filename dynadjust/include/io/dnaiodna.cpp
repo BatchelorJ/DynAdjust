@@ -398,6 +398,8 @@ void dna_io_dna::read_dna_header(std::ifstream* ptr, string& version, INPUT_DATA
 		case geo_data:
 			geoidversion = epoch_version;
 			break;
+		default:
+			break;
 		}
 	}
 	catch (const runtime_error& e) {
@@ -474,7 +476,7 @@ void dna_io_dna::write_stn_file(pvstn_t vbinary_stn, const string& stnfilename,
 		dna_stn_file.close();
 		
 	}
-	catch (const std::ifstream::failure f) {
+	catch (const std::ifstream::failure& f) {
 		throw boost::enable_current_exception(runtime_error(f.what()));
 	}
 }
@@ -524,7 +526,7 @@ void dna_io_dna::write_stn_file(vdnaStnPtr* vStations, const string& stnfilename
 		dna_stn_file.close();
 		
 	}
-	catch (const std::ifstream::failure f) {
+	catch (const std::ifstream::failure& f) {
 		throw boost::enable_current_exception(runtime_error(f.what()));
 	}	
 }
@@ -577,13 +579,13 @@ void dna_io_dna::write_msr_file(const vstn_t& vbinary_stn, pvmsr_t vbinary_msr, 
 		{
 			ResetMeasurementPtr<char>(&msrPtr, _it_msr->measType);
 			msrPtr->SetMeasurementRec(vbinary_stn, _it_msr);
-			msrPtr->WriteDNAMsr(&dna_msr_file, dmw_);
+			msrPtr->WriteDNAMsr(&dna_msr_file, dmw_, dml_);
 		}
 
 		dna_msr_file.close();
 
 	}
-	catch (const std::ifstream::failure f) {
+	catch (const std::ifstream::failure& f) {
 		throw boost::enable_current_exception(runtime_error(f.what()));
 	}
 }
@@ -607,12 +609,12 @@ void dna_io_dna::write_msr_file(vdnaMsrPtr* vMeasurements, const string& msrfile
 
 		// print measurements
 		for (_it_msr=vMeasurements->begin(); _it_msr!=vMeasurements->end(); _it_msr++)
-			_it_msr->get()->WriteDNAMsr(&dna_msr_file, dmw_);
+			_it_msr->get()->WriteDNAMsr(&dna_msr_file, dmw_, dml_);
 		
 		dna_msr_file.close();
 		
 	}
-	catch (const std::ifstream::failure f) {
+	catch (const std::ifstream::failure& f) {
 		throw boost::enable_current_exception(runtime_error(f.what()));
 	}
 	

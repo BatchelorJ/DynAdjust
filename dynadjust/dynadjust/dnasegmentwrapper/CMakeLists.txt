@@ -1,10 +1,7 @@
 # <dnasegmentwrapper/...> build rules
 project (dnasegmentwrapper)
 
-set (CMAKE_BUILD_TYPE "Release")
-
 # build dnasegment library first
-
 add_subdirectory (${CMAKE_SOURCE_DIR}/dynadjust/dnasegment ${CMAKE_BINARY_DIR}/dynadjust/dnasegment)
 
 add_definitions (-DBUILD_SEGMENT_EXE)

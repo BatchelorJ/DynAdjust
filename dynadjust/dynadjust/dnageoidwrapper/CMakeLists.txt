@@ -1,10 +1,7 @@
 # <dnageoidwrapper/...> build rules
 project (dnageoidwrapper)
 
-set (CMAKE_BUILD_TYPE "Release")
-
 # build dnageoid library first
-
 add_subdirectory (${CMAKE_SOURCE_DIR}/dynadjust/dnageoid ${CMAKE_BINARY_DIR}/dynadjust/dnageoid)
 
 add_definitions (-DBUILD_GEOID_EXE)

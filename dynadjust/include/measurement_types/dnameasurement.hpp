@@ -129,12 +129,12 @@ typedef boost::shared_ptr< vector<CDnaCovariance> > vecCovariancePtr;
 // data struct for storing measurement information to binary measurement file
 typedef struct msr_t {
 	msr_t()
-		: measType('\0'), measStart(0), ignore(false), station1(0), station2(0)
-		, station3(0), vectorCount1(0), vectorCount2(0)
+		: measType('\0'), measStart(0), measurementStations(1), ignore(false), station1(0), station2(0)
+		, station3(0), vectorCount1(0), vectorCount2(0), clusterID(0), fileOrder(0)
 		, term1(0.), term2(0.), term3(0.), term4(0.), scale1(1.), scale2(1.), scale3(1.), scale4(1.)
 		, measAdj(0.), measCorr(0.), measAdjPrec(0.), residualPrec(0.)
 		, NStat(0.), TStat(0.), PelzerRel(0.)
-		, preAdjCorr(0.), preAdjMeas(0.), clusterID(0), fileOrder(0), measurementStations(1) 
+		, preAdjCorr(0.), preAdjMeas(0.) 
 	{
 			memset(coordType, '\0', sizeof(coordType));
 			// GDA94, lat, long, height
@@ -189,11 +189,9 @@ typedef vmsr_t::const_iterator it_vmsr_t_const;
 
 typedef struct scl_t {
 	scl_t()
-		: v_scale(1.), p_scale(1.), l_scale(1.), h_scale(1.) 
-	{
-		station1 = "";
-		station2 = "";
-	}
+		: station1(""), station2("")
+		, v_scale(1.), p_scale(1.), l_scale(1.), h_scale(1.) 
+	{}
 
 	string	station1;		
 	string	station2;		
@@ -233,9 +231,13 @@ public:
 	void WriteBinaryMsr(std::ofstream* binary_stream, PUINT32 msrIndex, const string& epsgCode, const string& epoch) const;
 	virtual UINT32 SetMeasurementRec(std::ifstream* ifs_stns, std::ifstream* ifs_msrs, measurement_t* measRecord);
 	virtual UINT32 SetMeasurementRec(const vstn_t& binaryStn, it_vmsr_t& it_msr);
-	virtual void WriteDynaMLMsr(std::ofstream* dynaml_stream, bool bSubMeasurement = false) const;
-	virtual void WriteDNAMsr(std::ofstream* dynaml_stream, const dna_msr_fields& dmw, bool bSubMeasurement = false) const;
+	virtual void WriteDynaMLMsr(std::ofstream* dynaml_stream) const;
+	virtual void WriteDNAMsr(std::ofstream* dynaml_stream, 
+		const dna_msr_fields& dmw, const dna_msr_fields& dml, 
+		const msr_database_id_map& dbidmap, bool dbidSet) const;
 	virtual void SimulateMsr(vdnaStnPtr* vStations, const CDnaEllipsoid* ellipsoid);
+
+	void SerialiseDatabaseMap(std::ofstream* os, const UINT32& msr_id, const UINT32& cluster_id);
 
 	inline void SetClusterID(const UINT32& id) { m_lclusterID = id; }
 	inline void SetStn1Index(const UINT32& stn) { m_lstn1Index = stn; }
@@ -340,12 +342,12 @@ public:
 	// pure virtual functions overridden by specialised classes
 	virtual void coutMeasurementData(ostream &os, const UINT16& uType = 0) const = 0;
 	virtual UINT32 CalcBinaryRecordCount() const = 0;
-	virtual UINT32 CalcDbidRecordCount() const;
+	//virtual UINT32 CalcDbidRecordCount() const;
 	virtual void WriteBinaryMsr(std::ofstream* binary_stream, PUINT32 msrIndex) const = 0;
 	virtual UINT32 SetMeasurementRec(std::ifstream* ifs_stns, std::ifstream* ifs_msrs, measurement_t* measRecord) = 0;
 	virtual UINT32 SetMeasurementRec(const vstn_t& binaryStn, it_vmsr_t& it_msr) = 0;
 	virtual void WriteDynaMLMsr(std::ofstream* dynaml_stream, bool bSubMeasurement = false) const = 0;
-	virtual void WriteDNAMsr(std::ofstream* dynaml_stream, const dna_msr_fields& dmw, bool bSubMeasurement = false) const = 0;
+	virtual void WriteDNAMsr(std::ofstream* dynaml_stream, const dna_msr_fields& dmw, const dna_msr_fields& dml, bool bSubMeasurement = false) const = 0;
 	virtual void SimulateMsr(vdnaStnPtr* vStations, const CDnaEllipsoid* ellipsoid) = 0;
 
 	// virtual functions overridden by specialised classes
@@ -430,8 +432,19 @@ public:
 
 	virtual void coutBaselineData(ostream &os, const int& pad, const UINT16& uType = 0) {}
 
+	void SetMeasurementDBID(const string& str);
+	void SetClusterDBID(const string& str);
+	
+	inline void SetClusterDBID(const UINT32& u) { m_msr_db_map.cluster_id = u; }
+	inline void SetMeasurementDBID(const UINT32& u) { m_msr_db_map.msr_id = u; }
+	
+	inline UINT32 GetClusterDBID() { return m_msr_db_map.cluster_id; }
+	inline UINT32 GetMeasurementDBID() { return m_msr_db_map.msr_id; }
+	//virtual inline UINT32 GetClusterDBID() const { return 0; }
+	//virtual inline UINT32 GetMeasurementDBID() const { return 0; }
+
 	void SetDatabaseMap(const msr_database_id_map& dbidmap, bool dbidSet);
-	virtual inline void SetDatabaseMap_bmsIndex(const UINT32& bmsIndex) { m_msr_db_map.bms_index = bmsIndex; }
+	//virtual inline void SetDatabaseMap_bmsIndex(const UINT32& bmsIndex) { m_msr_db_map.bms_index = bmsIndex; }
 	
 	virtual void SerialiseDatabaseMap(std::ofstream* os);
 
@@ -485,14 +498,14 @@ public:
 	MsrTally operator+(const MsrTally& rhs) const;
 	MsrTally operator-(const MsrTally& rhs) const;
 	UINT32 TotalCount();
-	void coutSummary(ostream &os, const string title);
+	void coutSummary(ostream &os, const string& title);
 	UINT32 MeasurementCount(const char& msrType);
 	void CreateTally(const vdnaMsrPtr& vMeasurements);
 	void CreateTally(const vmsr_t& vMeasurements, const vUINT32& CML);
 	void IncrementMsrType(const char& msrType, const UINT32& count=1);
 
-	void coutSummaryMsrToStn(ostream &os, const string station);
-	void coutSummaryMsrToStn_Compressed(ostream &os, const string station);
+	void coutSummaryMsrToStn(ostream &os, const string& station);
+	void coutSummaryMsrToStn_Compressed(ostream &os, const string& station);
 
 	bool GPSOnly();	
 	inline bool ContainsNonGPS() { return containsNonGPS; }

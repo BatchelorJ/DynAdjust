@@ -1,10 +1,7 @@
 # <dnaimportwrapper/...> build rules
 project (dnaimportwrapper)
 
-set (CMAKE_BUILD_TYPE "Release")
-
 # build dnaimport library first
-
 add_subdirectory(${CMAKE_SOURCE_DIR}/dynadjust/dnaimport ${CMAKE_BINARY_DIR}/dynadjust/dnaimport)
 
 add_definitions (-DBUILD_IMPORT_EXE)

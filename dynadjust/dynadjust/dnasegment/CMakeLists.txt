@@ -1,8 +1,6 @@
 # <dnasegment/...> build rules
 project (dnasegment)
 
-set (CMAKE_BUILD_TYPE "Release")
-
 add_definitions(-DBUILD_DNASEGMENT_DLL -DBUILD_EXPORTDNATYPES)
 
 include_directories (${PROJECT_SOURCE_DIR})
